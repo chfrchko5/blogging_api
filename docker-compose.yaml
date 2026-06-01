@@ -1,0 +1,9 @@
+services:
+  db:
+    image: mysql
+    container_name: mysql-server
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "127.0.0.1:3306:3306"
