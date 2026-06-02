@@ -47,17 +47,28 @@ def create_app():
             return f"Post successfully created, ID:{post.id}, titled '{post.title}'", 201
                  
         if request.method == 'GET':
-            blogs = Blog.query.all()
+            term = request.args.get("term")
+
+            blogs = Blog.query
+
+            if term:
+                blogs = blogs.filter(
+                    Blog.title.ilike(f"%{term}%") |
+                    Blog.content.ilike(f"%{term}%") |
+                    Blog.category.ilike(f"%{term}%")
+                )
             
+            posts = blogs.all()
+
             return jsonify([{
-                "id": b.id,
-                "title": b.title,
-                "content": b.content,
-                "category": b.category,
-                "tags": b.tags,
-                "createdAt": b.createdAt,
-                "updatedAt": b.updatedAt
-            } for b in blogs
+                "id": p.id,
+                "title": p.title,
+                "content": p.content,
+                "category": p.category,
+                "tags": p.tags,
+                "createdAt": p.createdAt,
+                "updatedAt": p.updatedAt
+            } for p in posts
             ]), 200
 
         return jsonify(error="Method not allowed"), 405
@@ -86,13 +97,13 @@ def create_app():
 
             db.session.commit()
 
-            return f"Post ID:{post_id} updated successfully."
+            return f"Post ID:{post_id} updated successfully.", 200
 
         if request.method == "DELETE":
             db.session.delete(post)
             db.session.commit()
 
-            return f"Post ID:{post_id} successfully deleted."
+            return f"Post ID:{post_id} successfully deleted.", 204
 
         return jsonify(error="Method not allowed"), 405
 
