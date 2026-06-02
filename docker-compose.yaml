@@ -7,3 +7,21 @@ services:
       MYSQL_ROOT_PASSWORD: password
     ports:
       - "127.0.0.1:3306:3306"
+    volumes:
+    - mysql:/var/lib/mysql
+    
+  workbench:
+    image: lscr.io/linuxserver/mysql-workbench:latest
+    container_name: mysql-workbench
+    restart: unless-stopped
+    ports:
+    - "3000:3000"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    depends_on:
+      - db
+
+volumes:
+  mysql:

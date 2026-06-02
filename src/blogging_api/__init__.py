@@ -1,8 +1,8 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 from dotenv import load_dotenv
 import os
-
 
 def create_app():
     load_dotenv()
@@ -17,17 +17,47 @@ def create_app():
 
     class Blog(db.Model):
         __tablename__ = 'blog'
+
         id = db.Column(db.Integer, primary_key=True, autoincrement=True)
         title = db.Column(db.String(30), nullable=False)
         content = db.Column(db.Text, nullable=False)
         category = db.Column(db.String(20), nullable=False)
         tags = db.Column(db.Text, nullable=False)
-
-        # DO THESE TWO AFTER SUCCESSFUL TABLE CREATION
-        # createdAt = db.Column(db.TIMESTAMP)
-        # updatedAt = db.Column(db.TIMESTAMP)
+        createdAt = db.Column(db.TIMESTAMP, default=func.current_timestamp())
+        updatedAt = db.Column(db.TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp())
 
     with app.app_context():
         db.create_all()
+
+    @app.route("/posts", methods=["GET", "POST", "PUT"])
+    def posts():
+        if request.method == 'POST':
+            data = request.get_json()
+
+            post = Blog(
+                title = data["title"],
+                content = data["content"],
+                category = data["category"],
+                tags = data["tags"]
+            )
+
+            db.session.add(post)
+            db.session.commit()
+
+            return jsonify({
+                "id": post.id,
+                "title": post.title
+            }), 201
+        
+        if request.method == 'GET':
+            blogs = Blog.query.all()
+            
+            return jsonify([{
+                "id": b.id,
+                "title": b.title,
+                "content": b.content
+            } for b in blogs
+            ]), 200
+
 
     return app
