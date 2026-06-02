@@ -29,7 +29,7 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    @app.route("/posts", methods=["GET", "POST", "PUT"])
+    @app.route("/posts", methods=["GET", "POST"])
     def posts():
         if request.method == 'POST':
             data = request.get_json()
@@ -43,21 +43,57 @@ def create_app():
 
             db.session.add(post)
             db.session.commit()
-
-            return jsonify({
-                "id": post.id,
-                "title": post.title
-            }), 201
-        
+  
+            return f"Post successfully created, ID:{post.id}, titled '{post.title}'", 201
+                 
         if request.method == 'GET':
             blogs = Blog.query.all()
             
             return jsonify([{
                 "id": b.id,
                 "title": b.title,
-                "content": b.content
+                "content": b.content,
+                "category": b.category,
+                "tags": b.tags,
+                "createdAt": b.createdAt,
+                "updatedAt": b.updatedAt
             } for b in blogs
             ]), 200
 
+        return jsonify(error="Method not allowed"), 405
+    
+    @app.route("/posts/<int:post_id>", methods=["GET", "PUT"])
+    def update_post(post_id):
+        post = Blog.query.get(post_id)
+        if not post:
+                return f"Post ID:{post_id} not found.", 404
+
+
+        if request.method == "GET":
+            return jsonify({
+                "id": post.id,
+                "title": post.title,
+                "content": post.content
+            }), 200
+        
+        if request.method == "PUT":
+            data = request.get_json()
+
+            post = Blog.query.get(post_id)
+            
+            post.title = data["title"]
+            post.content = data["content"]
+
+            db.session.commit()
+
+            return f"Post ID:{post_id} updated successfully."
+
+        if request.method == "DELETE":
+            db.session.delete(post)
+            db.session.commit()
+
+            return f"Post ID:{post_id} successfully deleted."
+
+        return jsonify(error="Method not allowed"), 405
 
     return app
